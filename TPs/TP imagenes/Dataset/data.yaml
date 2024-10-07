@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['Tas_Var']
+
+roboflow:
+  workspace: tez-nwkf5
+  project: tez_roi_aug
+  version: 3
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/tez-nwkf5/tez_roi_aug/dataset/3
