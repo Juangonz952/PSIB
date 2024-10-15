@@ -30,3 +30,7 @@ plt.show()
 
 # Print the coordinates after the window is closed
 print("Coordinates:", coords)
+# Save the coordinates to a file
+with open('coordinates.txt', 'w') as f:
+    for coord in coords:
+        f.write(f"{coord[0]}, {coord[1]}\n")
