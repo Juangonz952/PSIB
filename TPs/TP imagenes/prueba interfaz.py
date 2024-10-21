@@ -1,6 +1,5 @@
 import cv2
 import matplotlib.pyplot as plt
-
 # Load the image using OpenCV
 image_path = 'C:/Users/Juan Bautista/.vscode/PSIB/Texturas/drive-download-20241009T222141Z-001/img17.png'
 image = cv2.imread(image_path)
