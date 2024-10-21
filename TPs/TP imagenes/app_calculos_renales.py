@@ -201,11 +201,10 @@ def clasificacion():
     for i in range(len(distancias)):
         if distancias[i]==min(distancias):
             grado = str(i+1)
-            print(f"El cálculo es de Grado {i+1}")
-            messagebox.showinfo("Clasificación", f"El cálculo es de Grado {i+1}")
+            grado_var.set(f"El cálculo es de Grado {i+1}")
 
 tomografia = None
-grado = "Sin calcular"
+grado = "Grado del cálculo: Sin calcular"
 app = tk.Tk()
 grado_var = tk.StringVar(app,value = grado)
 cargar_labels()
@@ -240,10 +239,10 @@ herramienas.update()
 herramienas.pack(anchor='nw', fill='both')
 
 #Boton para cargar la imagen
-tk.Label(
+Grade = tk.Label(
     app,
-    text="Grado del calculo renal: " + grado,
-    textvariable=grado,
+    textvariable=grado_var,
+    text="Grado del calculo renal: ",
     font=("Arial", 12),
     bg="grey",
     fg="white",
