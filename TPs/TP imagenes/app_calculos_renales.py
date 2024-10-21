@@ -102,7 +102,6 @@ def apertura(imgbinaria):
   close_img = cv2.dilate(erode_img, kernel, iterations=1)
   return close_img
 def Boxes(img,Prom_A,Prom_R,Desv_R,Cota):
-    print(Prom_A,Prom_R,Desv_R,Cota)
     ax.clear()
     img_cluster, centros=kmeans(img,3,10,0.9)
     imgbin=binarizar(img_cluster,centros)[1]
@@ -246,6 +245,7 @@ Grade = tk.Label(
     font=("Arial", 12),
     bg="grey",
     fg="white",
+
 ).pack(fill=tk.BOTH, expand=True, anchor='nw')
 tk.Button(
     app,
@@ -290,7 +290,7 @@ tk.Button(
     bg = "yellow",
     fg = "black",
     command=lambda: clasificacion(),
-    relief="flat",
+    relief="sunken",
 ).pack(
     fill=tk.BOTH,
     expand=True,
