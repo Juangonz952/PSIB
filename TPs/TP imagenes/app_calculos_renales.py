@@ -113,7 +113,6 @@ def Boxes(img,Prom_A,Prom_R,Desv_R,Cota):
         x, y, w, h = cv2.boundingRect(contour)
         if (50+w<x+w<150 or 250+w<x+w<330):
             if (Prom_A*(1-Cota) < w*h < Prom_A*(1+Cota)) and (Prom_R - Desv_R < w/h < Prom_R + Desv_R and w< 50 and h<50):
-                    print(f"Drawing rectangle at: x={x}, y={y}, w={w}, h={h}")
                     cv2.rectangle(copia, (x, y), (x+w, y+h), (0, 255, 0), 2)
     plt.imshow(cv2.cvtColor(copia, cv2.COLOR_BGR2RGB))
     plt.axis('off')
@@ -137,7 +136,6 @@ def region_growing():
     if 'x' not in globals() or 'y' not in globals():
         messagebox.showerror("Error", "Por favor, selecciona una coordenada primero.")
         return
-    print(x, y)
     ax.clear()
     fig.canvas.mpl_disconnect(cid)
     seed = (x, y)
@@ -157,12 +155,10 @@ def region_growing():
                 if abs(int(img[ny, nx]) - int(img[y, x])) < 100:
                     region[ny, nx] = 255
                     stack.append((nx, ny))
-    print("Region growing finalizado")
     ax.clear()
     ax.imshow(region, cmap='gray')
     ax.axis('off')
     canvas.draw()
-    print("Region growing finalizado")
     return region
 def clusters_y_bolainas():
     # Stackeamos los datos para obtener datos en 2D
@@ -190,7 +186,7 @@ def distancia(wc,hc,h,w):
   return np.sqrt((hc-h)**2+(wc-w)**2)
 
 def clasificacion():
-    global centersord, grado,centers,region
+    global centersord, grado,centers,region,grado_var
     obtener_coordenadas()
     region = region_growing()
     region_canny = cv2.Canny(region, 10, 256)
@@ -207,9 +203,11 @@ def clasificacion():
             grado = str(i+1)
             print(f"El cálculo es de Grado {i+1}")
             messagebox.showinfo("Clasificación", f"El cálculo es de Grado {i+1}")
+
 tomografia = None
+grado = "Sin calcular"
 app = tk.Tk()
-grado = tk.StringVar(app,value = "Sin calcular")
+grado_var = tk.StringVar(app,value = grado)
 cargar_labels()
 A,R,C,D = analisis_cajas(cargar_labels())
 PrA, DesA, PrR, DesR = promedios_cajas(A,R)
@@ -219,7 +217,6 @@ Prom_A = tk.DoubleVar( value=PrA)
 Prom_R = tk.DoubleVar( value=PrR)
 Desv_R = tk.DoubleVar( value=DesR)
 Cota = tk.DoubleVar( value=2)
-print(Prom_A.get(),Prom_R.get(),Desv_R.get(),Cota.get())
 #####
 
 widths = [dim[0] for dim in D]
@@ -233,17 +230,24 @@ app.configure(bg="black")
 app.title("Detector de calculos renales")
 
 #prueba de grafico
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(5, 4))  # Adjust the figsize to reduce the plot size
 plt.imshow(np.zeros((320,391)), cmap='gray', vmin=0, vmax=255)
 ax.axis('off')
 canvas = FigureCanvasTkAgg(fig, master=app)
 canvas.get_tk_widget().pack()
 herramienas = NavigationToolbar2Tk(canvas, app, pack_toolbar=False)
 herramienas.update()
-herramienas.pack(anchor='nw',fill='both')
+herramienas.pack(anchor='nw', fill='both')
 
 #Boton para cargar la imagen
-
+tk.Label(
+    app,
+    text="Grado del calculo renal: " + grado,
+    textvariable=grado,
+    font=("Arial", 12),
+    bg="grey",
+    fg="white",
+).pack(fill=tk.BOTH, expand=True, anchor='nw')
 tk.Button(
     app,
     text="Cargar imagen",
@@ -292,5 +296,6 @@ tk.Button(
     fill=tk.BOTH,
     expand=True,
 )
+
 #Mantiene la aplicacion en constante actualizacion, permite interactuar con la interfaz
 app.mainloop()
