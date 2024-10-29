@@ -223,7 +223,7 @@ clusters_y_bolainas()
 #Dimensiones: Ancho x Altura
 app.geometry("1000x1000")
 #Cambio el color del fondo
-app.configure(bg="black")
+app.configure(bg="grey")
 #Titulo de la ventana
 app.title("Detector de calculos renales")
 
