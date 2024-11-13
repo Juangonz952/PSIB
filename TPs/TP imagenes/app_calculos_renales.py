@@ -1,6 +1,6 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, DoubleVar
-from PIL import Image, ImageTk
+from tkinter import filedialog, messagebox
+from ttkthemes import ThemedTk
 import cv2
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -8,10 +8,9 @@ import numpy as np
 import os
 import pandas as pd
 
-#messagebox.showinfo(message="¡Hola, mundo!", title="Saludo")
 
 def cargar_imagen():
-    # Abrir el cuadro de diálogo para seleccionar el archivo
+    # Abre la ventana para selelccionar la imagen 
     global tomografia
     file_path = filedialog.askopenfilename(title="Selecciona una imagen", 
                                         filetypes=[("Archivos de imagen", "*.jpg;*.png;*.jpeg;*.bmp;*.tiff")])
@@ -23,18 +22,23 @@ def cargar_imagen():
         tomografia = imagen
         return imagen
     else:
+        #en caso de que no elija ninguna imagen se muestra un mensaje de advertencia y el programa no prosigue
         print("No se seleccionó ninguna imagen.")
         return None
 
 def plotear_imagen(imagen):
+    # Limpia el plot y muestra la imagen
     ax.clear()
     plt.imshow(imagen, cmap='gray', vmin=0, vmax=255)
     plt.axis('off')
     canvas.draw()
 
 def seleccionar_y_mostrar():
+    #selecciono imagen y la muestra
     imagen = cargar_imagen()
     plotear_imagen(imagen)
+
+#funcion para clusterizar la imagen (solo funciona con la imagen)
 def kmeans(imagen,k, iteraciones,epsilon):
   copia=imagen.copy()
   pixel_vals = copia.reshape((-1))#se pasa la dimensión de la imagen a no--> NO IMPORTA LA DISTRIBUCIÓN ESPACIAL
@@ -52,15 +56,16 @@ def kmeans(imagen,k, iteraciones,epsilon):
 def binarizar(img_clust, centros):
   umb, img_bin = cv2.threshold(img_clust, max(centros)-10, 255, cv2.THRESH_BINARY)
   return umb, img_bin
-    
+
+# funcion para cargar los labels en un vector
 def cargar_labels():
-   # aca pongan el path a su carpeta de imagenes del drive
-    train_labels_dir = 'C:/Users/Juan Bautista/.vscode/PSIB/TPs/TP imagenes/Dataset/train/labels'
+   # aca pongan el path a su carpeta del dataset
+    train_labels_dir = os.path.join(os.path.expanduser('~'), '.vscode', 'PSIB', 'TPs', 'TP imagenes', 'Dataset', 'train', 'labels')
     # me armo una lista
     train_labels_files = [f for f in os.listdir(train_labels_dir) if os.path.isfile(os.path.join(train_labels_dir, f))]
     # creo un dataframe con las rutas de las imagenes
     train_labels_paths = pd.DataFrame({'LabelPath': [os.path.join(train_labels_dir, f) for f in train_labels_files]})
-    train_labels = []   
+    train_labels = []
     for path in train_labels_paths['LabelPath']:
     # leo los labels
         with open(path, 'r') as file:
@@ -70,6 +75,8 @@ def cargar_labels():
             numeric_values = [float(value) for line in separated_values for value in line]
         train_labels.append(numeric_values)
     return train_labels
+
+#funcion para a partir de la data de labels conseguir area,ratio,dimensiones y coordenadas
 def analisis_cajas(labels):
     Areas = []
     Ratios = []
@@ -88,12 +95,17 @@ def analisis_cajas(labels):
                 Coordenadas.append([x,y])
                 Dimensiones.append([w,h])
     return Areas, Ratios, Coordenadas, Dimensiones
+
+#funcion que promedia y busca desvio
+
 def promedios_cajas(Areas, Ratios):
     prom_area = np.mean(Areas)
     prom_ratio = np.mean(Ratios)
     desv_area = np.std(Areas)
     desv_ratio = np.std(Ratios)
     return prom_area,desv_area, prom_ratio, desv_ratio
+
+#funcion de apertura de imagen
 def apertura(imgbinaria):
   kernel = np.ones((9, 9), 'uint8')
   erode_img = cv2.erode(imgbinaria, kernel, iterations=1)
@@ -101,6 +113,8 @@ def apertura(imgbinaria):
   kernel = np.ones((4, 4), 'uint8')
   close_img = cv2.dilate(erode_img, kernel, iterations=1)
   return close_img
+
+#funcion que dibuja las cajas solo si esta dentro de nuestros criterios
 def Boxes(img,Prom_A,Prom_R,Desv_R,Cota):
     ax.clear()
     img_cluster, centros=kmeans(img,3,10,0.9)
@@ -110,29 +124,32 @@ def Boxes(img,Prom_A,Prom_R,Desv_R,Cota):
     copia = img.copy()
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        if (50+w<x+w<150 or 250+w<x+w<330):
-            if (Prom_A*(1-Cota) < w*h < Prom_A*(1+Cota)) and (Prom_R - Desv_R < w/h < Prom_R + Desv_R and w< 50 and h<50):
+        if (50+w<x+w<150 or 250+w<x+w<330): #solo dibujo la caja si se encuentra en la posicion de los riñones
+            if (Prom_A*(1-Cota) < w*h < Prom_A*(1+Cota)) and (Prom_R - Desv_R < w/h < Prom_R + Desv_R and w< 50 and h<50): #solo dibujo la caja si se encuentra en una dimension y ratio similar al de las cajas dato
                     cv2.rectangle(copia, (x, y), (x+w, y+h), (0, 255, 0), 2)
     plt.imshow(cv2.cvtColor(copia, cv2.COLOR_BGR2RGB))
     plt.axis('off')
     canvas.draw()
 
 
+#funcion para obtener las coordenadas de un click en la pantalla y dibujar un punto en el click
 def onclick(event):
     global x, y
     if event.xdata is not None and event.ydata is not None:
         x, y = int(event.xdata), int(event.ydata)
-        # Draw a marker at the clicked coordinate
-        ax.plot(x, y, 'ro')  # 'ro' means red color, circle marker
+        # Dibuja un punto en las coordenadas
+        ax.plot(x, y, 'ro')  
         plt.draw()
 
+#funcion para obtener las coordenadas de un click en la pantalla
 def obtener_coordenadas():
     global cid
     cid = fig.canvas.mpl_connect('button_press_event', onclick)
 
+#algoritmo de region growing tomando como variables globales las coordenadas del click
 def region_growing():
     global tomografia, cid, x, y,region
-    if 'x' not in globals() or 'y' not in globals():
+    if 'x' not in globals() or 'y' not in globals(): # Si no se seleccionó una coordenada previamente se muestra un mensaje de error
         messagebox.showerror("Error", "Por favor, selecciona una coordenada primero.")
         return
     ax.clear()
@@ -159,7 +176,10 @@ def region_growing():
     ax.axis('off')
     canvas.draw()
     return region
-def clusters_y_bolainas():
+
+#funcion para clusterizar las dimensiones de los calculos
+#distinta de la funcion kmeans declarada previamente, esta unicamente se utiliza en la data de las dimensiones de los calculos
+def kmeans_clusters_data():
     # Stackeamos los datos para obtener datos en 2D
     global widths,heights,centersord,new_labels,centers
     data = np.float32(np.column_stack((widths, heights)))  # Datos en el formato correcto
@@ -181,9 +201,11 @@ def clusters_y_bolainas():
         old_label = sorted_indices[i]  # Índice original del centroide
         new_labels[labels == old_label] = i  # Reasignar nueva etiqueta (i) a los puntos que corresponden a old_label
 
+#funcion para calcular la distancia entre un punto y un centroide
 def distancia(wc,hc,h,w):
   return np.sqrt((hc-h)**2+(wc-w)**2)
 
+#funcion para clasificar el calculo en un grado en funcion a la distancia al centroide
 def clasificacion():
     global centersord, grado,centers,region,grado_var
     obtener_coordenadas()
@@ -193,9 +215,9 @@ def clasificacion():
     
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-    distancias=np.zeros(len(centers)) # Changed from centers[0] to centers
-    for i in range(len(centers)): # Changed from centers[0] to centers
-        distancias[i]=distancia(centersord[i][0],centersord[i][1],h,w) # Changed from centers[0][i][0] to centers[i][0] and centers[0][i][1] to centers[i][1]
+    distancias=np.zeros(len(centers)) 
+    for i in range(len(centers)): 
+        distancias[i]=distancia(centersord[i][0],centersord[i][1],h,w) 
         min(distancias)
     for i in range(len(distancias)):
         if distancias[i]==min(distancias):
@@ -204,7 +226,7 @@ def clasificacion():
 
 tomografia = None
 grado = "Grado del cálculo: Sin calcular"
-app = tk.Tk()
+app = ThemedTk(theme="winxpblue")
 grado_var = tk.StringVar(app,value = grado)
 cargar_labels()
 A,R,C,D = analisis_cajas(cargar_labels())
@@ -219,7 +241,7 @@ Cota = tk.DoubleVar( value=2)
 
 widths = [dim[0] for dim in D]
 heights = [dim[1] for dim in D]
-clusters_y_bolainas()
+kmeans_clusters_data()
 #Dimensiones: Ancho x Altura
 app.geometry("1000x1000")
 #Cambio el color del fondo
@@ -228,72 +250,92 @@ app.configure(bg="grey")
 app.title("Detector de calculos renales")
 
 #prueba de grafico
-fig, ax = plt.subplots(figsize=(5, 4))  # Adjust the figsize to reduce the plot size
+frame_buttons = tk.Frame(app, bg="grey")
+frame_buttons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+frame_plot = tk.Frame(app, bg="grey")
+frame_plot.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+fig, ax = plt.subplots(figsize=(6, 5))  # Tamaño del plot
 plt.imshow(np.zeros((320,391)), cmap='gray', vmin=0, vmax=255)
 ax.axis('off')
-canvas = FigureCanvasTkAgg(fig, master=app)
+canvas = FigureCanvasTkAgg(fig, master=frame_plot)
 canvas.get_tk_widget().pack()
-herramienas = NavigationToolbar2Tk(canvas, app, pack_toolbar=False)
+herramienas = NavigationToolbar2Tk(canvas, frame_plot, pack_toolbar=False)
 herramienas.update()
 herramienas.pack(anchor='nw', fill='both')
 
-#Boton para cargar la imagen
+canvas.get_tk_widget().pack()
+herramienas.update()
+herramienas.pack(anchor='nw', fill='both')
+
 Grade = tk.Label(
-    app,
+    frame_plot,
     textvariable=grado_var,
     text="Grado del calculo renal: ",
-    font=("Arial", 12),
-    bg="grey",
+    font=("Arial", 16,"bold"),
+    bg="blue",
     fg="white",
-
+    relief="raised",
 ).pack(fill=tk.BOTH, expand=True, anchor='nw')
+
+button_style = {
+    "font": ("Arial", 20, "bold"),
+    "bg": "#4CAF50",
+    "fg": "white",
+    "relief": "raised",
+    "bd": 5,
+    "activebackground": "#45a049",
+    "activeforeground": "white",
+    "cursor": "hand2"
+}
+
 tk.Button(
-    app,
+    frame_buttons,
     text="Cargar imagen",
-    font=("Arial", 12),
-    bg = "#00a0f0",
-    fg = "black",
     command=seleccionar_y_mostrar,
-    relief="solid",
+    **button_style
 ).pack(
     fill=tk.BOTH,
     expand=True,
+    pady=5,
+    padx=10
 )
+
 tk.Button(
-    app,
+    frame_buttons,
     text="Hallar Calculos",
-    font=("Arial", 12),
-    bg = "green",
-    fg = "black",
     command=lambda: Boxes(tomografia,Prom_A.get(),Prom_R.get(),Desv_R.get(),Cota.get()),
-    relief="flat",
+    **button_style
 ).pack(
     fill=tk.BOTH,
     expand=True,
+    pady=5,
+    padx=10
 )
+
 tk.Button(
-    app,
+    frame_buttons,
     text="Marcar Calculos",
-    font=("Arial", 12),
-    bg = "magenta",
-    fg = "black",
     command=lambda:obtener_coordenadas(),
-    relief="flat",
+    **button_style
 ).pack(
     fill=tk.BOTH,
     expand=True,
+    pady=5,
+    padx=10
 )
+
 tk.Button(
-    app,
+    frame_buttons,
     text="Clasificar Calculos",
-    font=("Arial", 12),
-    bg = "yellow",
-    fg = "black",
     command=lambda: clasificacion(),
-    relief="sunken",
+    **button_style
 ).pack(
     fill=tk.BOTH,
     expand=True,
+    pady=5,
+    padx=10
 )
 
 #Mantiene la aplicacion en constante actualizacion, permite interactuar con la interfaz
