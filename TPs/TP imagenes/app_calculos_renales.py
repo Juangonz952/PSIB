@@ -225,8 +225,8 @@ def clasificacion():
             grado_var.set(f"El cálculo es de Grado {i+1}")
 
 #aca escriban el path que les lleva a la carpeta de labels del dataset
-script_dir = os.path.dirname(os.path.abspath(__file__))
-path = os.path.join(script_dir, 'Dataset/train/labels')  
+
+path = 'C:/Users/Juan Bautista/.vscode/PSIB/TPs/TP imagenes/Dataset/train/labels'
 
 #variables globales
 tomografia = None
