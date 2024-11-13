@@ -58,14 +58,14 @@ def binarizar(img_clust, centros):
   return umb, img_bin
 
 # funcion para cargar los labels en un vector
-def cargar_labels():
+def cargar_labels(path):
    # aca pongan el path a su carpeta del dataset
-    train_labels_dir = os.path.join(os.path.expanduser('~'), '.vscode', 'PSIB', 'TPs', 'TP imagenes', 'Dataset', 'train', 'labels')
+    train_labels_dir = path
     # me armo una lista
     train_labels_files = [f for f in os.listdir(train_labels_dir) if os.path.isfile(os.path.join(train_labels_dir, f))]
     # creo un dataframe con las rutas de las imagenes
     train_labels_paths = pd.DataFrame({'LabelPath': [os.path.join(train_labels_dir, f) for f in train_labels_files]})
-    train_labels = []
+    train_labels = []   
     for path in train_labels_paths['LabelPath']:
     # leo los labels
         with open(path, 'r') as file:
@@ -138,7 +138,7 @@ def onclick(event):
     if event.xdata is not None and event.ydata is not None:
         x, y = int(event.xdata), int(event.ydata)
         # Dibuja un punto en las coordenadas
-        ax.plot(x, y, 'ro')  
+        ax.plot(x, y, 'ro', markersize=2)  
         plt.draw()
 
 #funcion para obtener las coordenadas de un click en la pantalla
@@ -224,12 +224,21 @@ def clasificacion():
             grado = str(i+1)
             grado_var.set(f"El cálculo es de Grado {i+1}")
 
+#aca escriban el path que les lleva a la carpeta de labels del dataset
+script_dir = os.path.dirname(os.path.abspath(__file__))
+path = os.path.join(script_dir, 'Dataset/train/labels')  
+
+#variables globales
 tomografia = None
 grado = "Grado del cálculo: Sin calcular"
+
+#Creacion de la ventana
 app = ThemedTk(theme="winxpblue")
+
+#Variables de control
 grado_var = tk.StringVar(app,value = grado)
-cargar_labels()
-A,R,C,D = analisis_cajas(cargar_labels())
+cargar_labels(path)
+A,R,C,D = analisis_cajas(cargar_labels(path))
 PrA, DesA, PrR, DesR = promedios_cajas(A,R)
 palabra = tk.StringVar(app)
 entrada = tk.StringVar(app)
@@ -241,6 +250,7 @@ Cota = tk.DoubleVar( value=2)
 
 widths = [dim[0] for dim in D]
 heights = [dim[1] for dim in D]
+#clusterizo las dimensiones de los calculos
 kmeans_clusters_data()
 #Dimensiones: Ancho x Altura
 app.geometry("1000x1000")
@@ -250,17 +260,22 @@ app.configure(bg="grey")
 app.title("Detector de calculos renales")
 
 #prueba de grafico
+#creo un frame para los botones
 frame_buttons = tk.Frame(app, bg="grey")
 frame_buttons.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+#creo un frame para el plot y el label
 frame_plot = tk.Frame(app, bg="grey")
 frame_plot.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
 fig, ax = plt.subplots(figsize=(6, 5))  # Tamaño del plot
 plt.imshow(np.zeros((320,391)), cmap='gray', vmin=0, vmax=255)
 ax.axis('off')
+
+# Crear el canvas para mostrar el plot
 canvas = FigureCanvasTkAgg(fig, master=frame_plot)
 canvas.get_tk_widget().pack()
+
+# Crear la barra de herramientas 
 herramienas = NavigationToolbar2Tk(canvas, frame_plot, pack_toolbar=False)
 herramienas.update()
 herramienas.pack(anchor='nw', fill='both')
