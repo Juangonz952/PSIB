@@ -9,7 +9,7 @@ import os
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-
+from sklearn.neighbors import KNeighborsClassifier
 
 def cargar_imagen():
     # Abre la ventana para selelccionar la imagen 
@@ -151,6 +151,25 @@ def RD_Boxes(imagen,Cota = .7):
     plt.text(0,13, f"Probabilidad > {round(Cota*100,4)}%", fontsize=10, color = 'red',backgroundcolor='white')
     plt.axis('off')
     canvas.draw()
+def Knn_Boxes(imagen):
+    img = np.copy(imagen)
+    img_cluster, centros=kmeans(img,3,10,0.9)
+    imgbin=binarizar(img_cluster,centros)[1]
+    img_Canny = cv2.Canny(imgbin, 200, 256)
+    contours, _ = cv2.findContours(img_Canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
+    knn = KNeighborsClassifier(n_neighbors=7)
+    knn.fit(Input_Train_position, Output_Train_position)
+    # Dibujar contornos
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        prediction = knn.predict(np.array([[x/391 +w/(2*391), y/320 + h/(2*320)]]))
+        if prediction == 1:
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.title('BB aplicando K-nearest')
+    plt.axis('off')
+    plt.text(0,13, f"K = {7}", fontsize=10, color = 'red',backgroundcolor='white')
+    canvas.draw()
 #funcion para obtener las coordenadas de un click en la pantalla y dibujar un punto en el click
 def onclick(event):
     global x, y
@@ -247,6 +266,10 @@ def clasificacion():
 
 path = 'C:/Users/Juan Bautista/.vscode/PSIB/TPs/TP imagenes/Dataset/train/labels'
 
+file_path = r"C:/Users/Juan Bautista/.vscode/PSIB/TPs/TP imagenes/Output_Train_position.npy"
+Output_Train_position = np.load(file_path)
+file_path = r"C:/Users/Juan Bautista/.vscode/PSIB/TPs/TP imagenes/Input_Train_position.npy"
+Input_Train_position = np.load(file_path)
 #variables globales
 tomografia = None
 grado = "Grado del cálculo: Sin calcular"
@@ -352,6 +375,17 @@ tk.Button(
     frame_buttons,
     text="Hallar Calculos con redes neuronales",
     command=lambda: RD_Boxes(tomografia),
+    **button_style
+).pack(
+    fill=tk.BOTH,
+    expand=True,
+    pady=5,
+    padx=10
+)
+tk.Button(
+    frame_buttons,
+    text="Hallar Calculos con K-nearest",
+    command=lambda: Knn_Boxes(tomografia),
     **button_style
 ).pack(
     fill=tk.BOTH,
