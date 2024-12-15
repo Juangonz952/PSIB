@@ -361,7 +361,7 @@ tk.Button(
 
 tk.Button(
     frame_buttons,
-    text="Hallar Calculos",
+    text="Hallar Calculos con Estadistica",
     command=lambda: Boxes(tomografia,Prom_A.get(),Prom_R.get(),Desv_R.get(),Cota.get()),
     **button_style
 ).pack(
