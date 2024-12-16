@@ -129,6 +129,7 @@ def Boxes(img,Prom_A,Prom_R,Desv_R,Cota):
         if (50+w<x+w<150 or 250+w<x+w<330): #solo dibujo la caja si se encuentra en la posicion de los riñones
             if (Prom_A*(1-Cota) < w*h < Prom_A*(1+Cota)) and (Prom_R - Desv_R < w/h < Prom_R + Desv_R and w< 50 and h<50): #solo dibujo la caja si se encuentra en una dimension y ratio similar al de las cajas dato
                     cv2.rectangle(copia, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    plt.title('BB aplicando estadistica')
     plt.imshow(cv2.cvtColor(copia, cv2.COLOR_BGR2RGB))
     plt.axis('off')
     canvas.draw()
